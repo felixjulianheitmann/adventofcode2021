@@ -20,6 +20,7 @@ int main(int argc, char const *argv[])
     {
         is >> current;
         if(current > previous) increaseCounter++;
+        previous = current;
     }
 
     std::cout << "There are " << increaseCounter << " measurements exceeding its predecessor." << std::endl;
