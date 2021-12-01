@@ -1,6 +1,8 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <array>
+#include <numeric>
 
 std::vector<std::string> readArgs(int, char const *[]);
 
@@ -12,15 +14,23 @@ int main(int argc, char const *argv[])
     std::ifstream is;
     is.open(args.at(0));
 
-    int current = 0, previous = 0;
-    int increaseCounter = 0;
-    if(!is.eof()) is >> previous;
+    std::array<int, 3> window_current, window_prev;
+    int slider = 0, increaseCounter = 0;
+
+    // Read in the first 3 values
+    for(int &v : window_prev) is >> v;
+    window_current = window_prev;
 
     while (!is.eof())
     {
-        is >> current;
-        if(current > previous) increaseCounter++;
-        previous = current;
+        is >> window_current[slider];
+
+        int prev = std::accumulate(window_prev.begin(), window_prev.end(), 0);
+        int curr = std::accumulate(window_current.begin(), window_current.end(), 0);
+        if(prev < curr) increaseCounter++;
+
+        window_prev = window_current;
+        slider = ++slider % 3;
     }
 
     std::cout << "There are " << increaseCounter << " measurements exceeding its predecessor." << std::endl;
