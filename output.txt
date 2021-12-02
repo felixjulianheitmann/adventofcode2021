@@ -1,0 +1,3 @@
+Distance: 1991
+Depth: 911
+Solution: 1813801

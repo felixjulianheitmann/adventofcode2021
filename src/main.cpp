@@ -1,12 +1,38 @@
 #include <iostream>
 #include <vector>
+#include <fstream>
 
 std::vector<std::string> readArgs(int argc, char const *argv[]);
 
 int main(int argc, char const *argv[])
 {
-    // This is a template main
-    return 0;
+    auto args = readArgs(argc, argv);
+    if(args.empty()) {
+        std::cout << "Please enter a valid path for the input data." << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    std::ifstream is(args.at(0));
+    int depth = 0, distance = 0;
+
+    std::string direction;
+    int amount;
+
+    while(!is.eof())
+    {
+        is >> direction;
+        is >> amount;
+
+        if     (direction == "forward") distance += amount;
+        else if(direction == "up")      depth    -= amount;
+        else if(direction == "down")    depth    += amount;
+    }
+
+    std::cout << "Distance: " << distance << std::endl;
+    std::cout << "Depth: "    << depth    << std::endl;
+    std::cout << "Solution: " << distance * depth << std::endl;
+
+    return EXIT_SUCCESS;
 }
 
 std::vector<std::string> readArgs(int argc, char const *argv[])
