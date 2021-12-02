@@ -13,7 +13,7 @@ int main(int argc, char const *argv[])
     }
 
     std::ifstream is(args.at(0));
-    int depth = 0, distance = 0;
+    int depth = 0, distance = 0, aim = 0;
 
     std::string direction;
     int amount;
@@ -23,9 +23,12 @@ int main(int argc, char const *argv[])
         is >> direction;
         is >> amount;
 
-        if     (direction == "forward") distance += amount;
-        else if(direction == "up")      depth    -= amount;
-        else if(direction == "down")    depth    += amount;
+        if(direction == "forward") {
+            distance += amount;
+            depth    += amount * aim;
+        }
+        else if(direction == "up")   aim -= amount;
+        else if(direction == "down") aim += amount;
     }
 
     std::cout << "Distance: " << distance << std::endl;
