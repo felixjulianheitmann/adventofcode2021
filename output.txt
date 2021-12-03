@@ -1,0 +1,3 @@
+The gamma rate is 011100011000 (1816)
+The epsilon rate is 100011100111 (2279)
+Their product is 4138664
