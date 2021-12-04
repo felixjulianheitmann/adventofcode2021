@@ -7,7 +7,7 @@
 #include <numeric>
 
 using Cell_t  = std::pair<int, bool>;
-using Board_t = std::array<std::array<Cell_t, 5>, 5>;
+using Board_t = std::pair<std::array<std::array<Cell_t, 5>, 5>, bool>;
 
 std::vector<std::string> readArgs(int argc, char const *argv[]);
 Board_t transpose(Board_t const &board);
@@ -41,7 +41,7 @@ int main(int argc, char const *argv[])
         boards.push_back({});
         auto &board = boards.back();
 
-        for(auto &row : board)
+        for(auto &row : board.first)
         for(auto &cell : row)
                 is >> cell.first;
     }
@@ -53,7 +53,7 @@ int main(int argc, char const *argv[])
     {
         // Check off on all boards
         for(auto &board : boards)
-        for(auto &row   : board)
+        for(auto &row   : board.first)
         for(auto &cell  : row)
         {
             if(draw == cell.first) cell.second = true;
@@ -61,13 +61,14 @@ int main(int argc, char const *argv[])
 
         // Check for winner
         auto winningRoutine = 
-        [&winningNumber, &winningBoard](int draw, Board_t const &board)
+        [&winningNumber, &winningBoard](int draw, Board_t &board)
         {
-            for(auto const &row : board)
+            for(auto const &row : board.first)
             {
                 if(std::all_of(row.begin(), row.end(), [](auto const &c){ return c.second; }))
                 {
                     winningNumber = draw;
+                    board.second = true;
                     winningBoard = board;
                     return true;
                 }
@@ -75,17 +76,24 @@ int main(int argc, char const *argv[])
             return false;
         };
 
-        for(auto const &board : boards)
+        for(auto &board : boards)
         {
-            if(winningRoutine(draw, board)) break;
-            if(winningRoutine(draw, transpose(board))) break;
+            if(!board.second)
+            {
+                winningRoutine(draw, board);
+                board = transpose(board);
+                winningRoutine(draw, board);
+            }
         }
-        if(winningNumber != -1) break;
+
+        // break if all boards have won
+        if(std::all_of(boards.begin(), boards.end(), [](auto const &b){ return b.second; }))
+            break;
     }
 
     // Calculate result value
     int unmarkedSum = 0;
-    for(auto const &row : winningBoard)
+    for(auto const &row : winningBoard.first)
     {
         unmarkedSum += std::accumulate(
             row.begin(),
@@ -115,11 +123,11 @@ std::vector<std::string> readArgs(int argc, char const *argv[])
 
 Board_t transpose(Board_t const &board)
 {
-    Board_t transpose{};
-    for(int i = 0; i < board.size();    ++i)
-    for(int j = 0; j < board[0].size(); ++j)
+    Board_t transpose = board;
+    for(int i = 0; i < transpose.first.size();    ++i)
+    for(int j = 0; j < transpose.first[0].size(); ++j)
     {
-        transpose[i][j] = board[j][i];
+        transpose.first[i][j] = board.first[j][i];
     }
     return transpose;
 }
