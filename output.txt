@@ -1,1 +1,1 @@
-There are 6666 fields where at least 2 lines overlap.
+There are 19081 fields where at least 2 lines overlap.

@@ -55,7 +55,14 @@ int main(int argc, char const *argv[])
             auto y = line[0].y;
             auto [min, max] = std::minmax(line[0].x, line[1].x);
             for(int x = min; x <= max; ++x ) ++field[x][y];
-
+        }
+        else // DIagonal line
+        {
+            auto [p1, p2] = std::minmax(line[0], line[1], [](auto const &a, auto const &b){ return a.x < b.x; });
+            auto y = p1.y;
+            auto direction = p1.y < p2.y ? true : false;
+            for(int x = p1.x; x <= p2.x; ++x, y = direction ? y+1 : y-1)
+                ++field[x][y];
         }
     }
 
