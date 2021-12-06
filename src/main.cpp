@@ -2,15 +2,20 @@
 #include <fstream>
 #include <vector>
 #include <numeric>
+#include <algorithm>
 
 std::vector<std::string> readArgs(int argc, char const *argv[]);
 std::vector<std::string> splitString(std::string src, std::string delim);
 
-constexpr int Days = 80;
-class LanternFish
+constexpr int Days = 256;
+class LanternFishGroup
 {
 public:
-    LanternFish(int startCounter = 8) : _counter(startCounter) {};
+    LanternFishGroup(long amountOfFish = 1, int startCounter = 8)
+        : _counter(startCounter)
+        , _amountOfFish(amountOfFish)
+    {}
+
     bool decrCounter()
     {
         if(--_counter < 0) {
@@ -19,10 +24,12 @@ public:
         }
         return false;
     }
+    long addFish(long number) { _amountOfFish+=number; return _amountOfFish; }
+    long getAmount() const { return _amountOfFish; }
     int getCounter() const { return _counter; }
-    operator int() const { return _counter; }
 private:
     int _counter;
+    long _amountOfFish;
 };
 
 
@@ -36,21 +43,33 @@ int main(int argc, char const *argv[])
     std::string tmp;
     is >> tmp;
     auto inputs = splitString(tmp, ",");
-    std::vector<LanternFish> population;
-    for(auto const v : inputs) population.push_back(std::stoi(v));
+    std::vector<LanternFishGroup> population;
+    for(auto const v : inputs) population.push_back({ 1, std::stoi(v) });
 
     // Start simulation
     for(int i = 0; i < Days; ++i)
     {
-        int newFish = 0;
-        for(auto &fish : population)
-        {
-            if(fish.decrCounter()) ++newFish;
-        }
-        population.resize(population.size() + newFish);
-    }
+        long newFish = 0;
+        std::for_each(
+            population.begin(),
+            population.end(),
+            [&newFish](auto &fish)
+            {
+                if(fish.decrCounter()) newFish += fish.getAmount();
+            }
+        );
 
-    std::cout << "There are " << population.size() << " fish in the sea.";
+        population.push_back({ newFish });
+        long nFish = std::accumulate<std::vector<LanternFishGroup>::iterator, long>(
+            population.begin(),
+            population.end(),
+            0,
+            [](auto const v, auto const &fish){
+                return v + fish.getAmount();
+            }
+        );
+        std::cout << "Day " << i+1 << ": " << nFish << std::endl;
+    }
 
     return EXIT_SUCCESS;
 }
