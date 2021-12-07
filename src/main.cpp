@@ -34,7 +34,8 @@ int main(int argc, char const *argv[])
             0,
             [i](auto const v, auto const p)
             {
-                return v + std::abs(i-p);
+                // Calculate fuel using Guass formula
+                return v + ( std::abs(i-p) * std::abs(i-p) + std::abs(i-p) )/2;
             }
         );
 
