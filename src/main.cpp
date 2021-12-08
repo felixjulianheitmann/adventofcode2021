@@ -5,15 +5,30 @@
 #include <concepts>
 #include <array>
 #include <numeric>
+#include <map>
+
+// ##### Function declarations ###########################################
 
 std::vector<std::string> readArgs(int argc, char const *argv[]);
-
-using DigitDef = std::array<std::string, 10>;
-using DigitVal = std::array<std::string, 4>;
 
 template <typename T>
 requires std::floating_point<T> || std::integral<T> || std::same_as<T, std::string>
 std::vector<T> splitString(std::string src, std::string delim);
+
+template <int N>
+std::string getStringOfSize(std::array<std::string, N> const &strings, int size, int nth = 1);
+
+std::string getCharSame(std::string const &a, std::string const &b, bool inverse = false);
+
+bool contains(std::string const &s, char c) { return s.find(c) != std::string::npos; }
+
+int stringToDigit(std::string const &s);
+
+// ##### Type definitions ################################################
+
+using DigitDef = std::array<std::string, 10>;
+using DigitVal = std::array<std::string, 4>;
+
 
 int main(int argc, char const *argv[])
 {
@@ -31,35 +46,91 @@ int main(int argc, char const *argv[])
         std::copy(tmpVec.begin() + 11, tmpVec.begin()+15, inputs.back().second.begin());
     }
 
-    // Compute the number of 1,4,7 and 8 in the values
+    // Decode the inputs
+    int resultValue = 0;
 
-    int amount = std::accumulate(
-        inputs.begin(),
-        inputs.end(),
-        0,
-        [](auto const v, auto const line)
+    for(auto [definition, value] : inputs)
+    {
+        std::map<char, char> wiring;
+        auto str1 = getStringOfSize<10>(definition, 2);
+        auto str7 = getStringOfSize<10>(definition, 3);
+        auto str4 = getStringOfSize<10>(definition, 4);
+        auto str8 = getStringOfSize<10>(definition, 7);
+
+        std::array<std::string, 3> str690 = {
+            getStringOfSize<10>(definition, 6, 1),
+            getStringOfSize<10>(definition, 6, 2),
+            getStringOfSize<10>(definition, 6, 3),
+        };
+
+        std::array<std::string, 3> str235 = {
+            getStringOfSize<10>(definition, 5, 1),
+            getStringOfSize<10>(definition, 5, 2),
+            getStringOfSize<10>(definition, 5, 3),
+        };
+
+        wiring[getCharSame(str7, str1, true).front()] = 'd';
+        std::string ef = getCharSame(str4, str1, true);
+        std::string gc = getCharSame(str8, str4 + str7, true);
+
+        char g, e;
+
+        for(auto const &digit : str235 )
         {
-            return v + std::accumulate(
-                line.second.begin(),
-                line.second.end(),
-                0,
-                [](auto const v, auto const digit)
-                {
-                    if(    digit.size() == 2 // digit 1
-                        || digit.size() == 4 // digit 4
-                        || digit.size() == 3 // digit 7
-                        || digit.size() == 7 // digit 8
-                        ) return v + 1;
-                    else return v;
-                }
-            );
+            auto gtmp = getCharSame(gc, digit, true);
+            auto ctmp = getCharSame(gc, digit);
+            auto etmp = getCharSame(ef, digit, true);
+            auto ftmp = getCharSame(ef, digit);
+            if(!etmp.empty())
+            {
+                wiring[etmp.front()] = 'e';
+                wiring[ftmp.front()] = 'f';
+                e = etmp.front();
+            }
+            if(!gtmp.empty())
+            {
+                wiring[gtmp.front()] = 'g';
+                wiring[ctmp.front()] = 'c';
+                g = gtmp.front();
+            }
         }
-    );
 
-    std::cout << "The amount of 1, 4, 7, and 8 is " << amount << std::endl;
+        for(auto const &digit : str235 )
+        {
+            if(contains(digit, e))
+            {
+                wiring[getCharSame(digit, str1).front()] = 'b';
+            }
+            if(contains(digit, g))
+            {
+                wiring[getCharSame(digit, str1).front()] = 'a';
+            }
+        }
+
+        // Transform wiring to correct wiring
+        int valueInt = 0;
+        for(int i = 0; i < value.size(); ++i)
+        {
+            std::string trueValue;
+            for(auto c : value[i])
+            {
+                trueValue.push_back(wiring[c]);
+            }
+            int tmp = stringToDigit(trueValue);
+            for(int p = 3-i; p > 0; --p) tmp *= 10;
+            valueInt += tmp;
+        }
+
+        resultValue += valueInt;
+
+    }
+
+    std::cout << "The resulting value is " << resultValue << std::endl;
 
     return EXIT_SUCCESS;
 }
+
+// ##### Helper functions ########################################################
 
 std::vector<std::string> readArgs(int argc, char const *argv[])
 {
@@ -69,6 +140,8 @@ std::vector<std::string> readArgs(int argc, char const *argv[])
 
     return args;
 }
+
+// -------------------------------------------------------------------------------------------
 
 template <typename T>
 requires std::floating_point<T> || std::integral<T> || std::same_as<T, std::string>
@@ -102,4 +175,141 @@ std::vector<T> splitString(std::string src, std::string delim)
     }
 
     return ret;
+}
+
+// -------------------------------------------------------------------------------------------
+
+template <int N>
+std::string getStringOfSize(std::array<std::string, N> const &strings, int size, int nth)
+{
+    int encounter = 1;
+    for(auto const s : strings)
+    {
+        if(s.size() == size)
+        {
+            if(encounter == nth) return s;
+            else ++encounter;
+        }
+    }
+
+    return "";
+}
+
+// -------------------------------------------------------------------------------------------
+
+// Returns the chars in a that are in b
+std::string getCharSame(std::string const &a, std::string const &b, bool inverse)
+{
+    std::string tmp;
+    for(char ca: a)
+    {
+        if(inverse)
+        {
+            if( !contains(b, ca) ) tmp.push_back(ca);
+        }
+        else
+        {
+            if( contains(b, ca) ) tmp.push_back(ca);
+        }
+
+    }
+    return tmp;
+}
+
+// -------------------------------------------------------------------------------------------
+
+/**
+ * A string of up to 7 chars will transformed to a digit 0-9
+ * with the following map
+ *  dddd
+ * e    a
+ * e    a
+ *  ffff
+ * g    b
+ * g    b
+ *  cccc
+ */
+
+int stringToDigit(std::string const &s)
+{
+    if( contains(s, 'a') &&
+        contains(s, 'b') &&
+       !contains(s, 'c') &&
+       !contains(s, 'd') &&
+       !contains(s, 'e') &&
+       !contains(s, 'f') &&
+       !contains(s, 'g') ) return 1;
+    else if(
+        contains(s, 'a') &&
+       !contains(s, 'b') &&
+        contains(s, 'c') &&
+        contains(s, 'd') &&
+       !contains(s, 'e') &&
+        contains(s, 'f') &&
+        contains(s, 'g') ) return 2;
+    else if(
+        contains(s, 'a') &&
+        contains(s, 'b') &&
+        contains(s, 'c') &&
+        contains(s, 'd') &&
+       !contains(s, 'e') &&
+        contains(s, 'f') &&
+       !contains(s, 'g') ) return 3;
+    else if(
+        contains(s, 'a') &&
+        contains(s, 'b') &&
+       !contains(s, 'c') &&
+       !contains(s, 'd') &&
+        contains(s, 'e') &&
+        contains(s, 'f') &&
+       !contains(s, 'g') ) return 4;
+    else if(
+       !contains(s, 'a') &&
+        contains(s, 'b') &&
+        contains(s, 'c') &&
+        contains(s, 'd') &&
+        contains(s, 'e') &&
+        contains(s, 'f') &&
+       !contains(s, 'g') ) return 5;
+    else if(
+       !contains(s, 'a') &&
+        contains(s, 'b') &&
+        contains(s, 'c') &&
+        contains(s, 'd') &&
+        contains(s, 'e') &&
+        contains(s, 'f') &&
+        contains(s, 'g') ) return 6;
+    else if(
+        contains(s, 'a') &&
+        contains(s, 'b') &&
+       !contains(s, 'c') &&
+        contains(s, 'd') &&
+       !contains(s, 'e') &&
+       !contains(s, 'f') &&
+       !contains(s, 'g') ) return 7;
+    else if(
+        contains(s, 'a') &&
+        contains(s, 'b') &&
+        contains(s, 'c') &&
+        contains(s, 'd') &&
+        contains(s, 'e') &&
+        contains(s, 'f') &&
+        contains(s, 'g') ) return 8;
+    else if(
+        contains(s, 'a') &&
+        contains(s, 'b') &&
+        contains(s, 'c') &&
+        contains(s, 'd') &&
+        contains(s, 'e') &&
+        contains(s, 'f') &&
+       !contains(s, 'g') ) return 9;
+    else if(
+        contains(s, 'a') &&
+        contains(s, 'b') &&
+        contains(s, 'c') &&
+        contains(s, 'd') &&
+        contains(s, 'e') &&
+       !contains(s, 'f') &&
+        contains(s, 'g') ) return 0;
+    else return -1;
 }
